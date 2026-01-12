@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# --- Config ---
+: "${SYN_ROOT:=$HOME/axion}"           # dossier projet par défaut
+export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+
+# python3.11 portable (Intel + Apple Silicon)
+SYN_PY311="${SYN_PY311:-$(command -v python3.11 || true)}"
+if [[ -z "$SYN_PY311" ]]; then
+  echo "❌ python3.11 introuvable. Installe-le via: brew install python@3.11" >&2
+  exit 1
+fi
+PORT="${1:-8000}"
+
+cd "$SYN_ROOT"
+
+# 1) Prépare venv 3.11 si absent
+if [[ ! -x ".venv/bin/python" ]]; then
+  echo "ℹ️  Création venv (Python 3.11) dans $SYN_ROOT/.venv"
+  "$SYN_PY311" -m venv .venv
+  .venv/bin/python -m pip install -U pip setuptools wheel
+  if [[ -f requirements_full.txt ]]; then
+    echo "ℹ️  Installation requirements_full.txt"
+    .venv/bin/pip install -r requirements_full.txt || true
+  else
+    echo "⚠️  requirements_full.txt absent — installation minimale"
+    .venv/bin/pip install "fastapi==0.115.*" "uvicorn==0.30.*" "jinja2==3.1.*" "python-multipart>=0.0.9"
+  fi
+fi
+
+# 2) Lance Uvicorn avec le Python du venv 3.11
+echo "▶️  Lancement Axion"
+echo "   • ROOT = $SYN_ROOT"
+echo "   • PY   = $(.venv/bin/python -V)"
+echo "   • Port = $PORT"
+exec .venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port "$PORT" --reload

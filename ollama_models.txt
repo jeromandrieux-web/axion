@@ -1,0 +1,7 @@
+NAME                        ID              SIZE      MODIFIED     
+minimax-m2:cloud            698ab6d56142    -         22 hours ago    
+deepseek-v3.1:671b-cloud    d3749919e45f    -         11 days ago     
+phi3:mini                    500a1f067a9f    5.2 GB    11 days ago     
+qwen3-coder:480b-cloud      e30e45586389    -         4 weeks ago     
+gpt-oss:120b-cloud          569662207105    -         4 weeks ago     
+mistral:latest              6577803aa9a0    4.4 GB    2 weeks ago

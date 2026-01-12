@@ -1,0 +1,1474 @@
+/* backend/static/css/main.css */
+/* Styles principaux de l'application Axion */
+/* Auteur: Jax */
+/* ========== Variables de base ========== */
+:root {
+  --radius-lg: 1.4rem;
+  --radius-md: 1rem;
+  --radius-sm: .75rem;
+
+  /* largeur rail */
+  --rail-width: 200px; /* augmenté pour éviter le retour à la ligne des labels */
+
+  /* thème sombre par défaut */
+  --bg: radial-gradient(1100px 600px at 20% -5%, #14253b 0%, #0b1015 50%, #020617 90%);
+  --surface: rgba(5,8,12,0.55);
+  --elevated: rgba(7,10,15,0.7);
+  --border: rgba(255,255,255,0.06);
+  --muted: rgba(255,255,255,0.4);
+  --text: #e2e8f0;
+  --text-soft: rgba(226,232,240,0.6);
+  --accent: #3b82f6;
+  --accent-soft: rgba(59,130,246,0.12);
+  --danger: #f97316;
+  --typing-dot: rgba(226,232,240,0.45); /* valeur par défaut (sombre) */
+
+  /* rail (sombre) */
+  --rail-label: #bbb;
+  --rail-hover-bg: rgba(255, 255, 255, 0.08);
+  --rail-active-bg: rgba(255, 255, 255, 0.12);
+
+  /* Ajuster tailles des logos (adapter sélecteurs si nécessaires) */
+  --logo-left-max-width: 120px;
+  --logo-left-max-height: 60px;
+  --logo-right-max-width: 90px;
+  --logo-right-max-height: 45px;
+
+  /* Uniformiser la police des réponses du chat pour qu'elle soit identique
+     à celle des extractions "personnes" et "téléphone".
+     Remplacez .extraction .person/.phone par les sélecteurs exacts si différents. */
+  --extraction-font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --extraction-font-size: 15px;
+  --extraction-line-height: 1.5;
+}
+
+/* thème clair */
+html[data-theme="light"],
+body[data-theme="light"] {
+  --bg: radial-gradient(1200px 780px at 10% -12%, #ffffff 0%, #eef2f7 58%, #dfe5ee 100%);
+  --surface: rgba(255,255,255,0.85);
+  --elevated: rgba(255,255,255,0.9);
+  --border: rgba(6,24,44,0.055);
+  --muted: rgba(15,23,42,0.4);
+  --text: #0f172a;
+  --text-soft: rgba(15,23,42,0.6);
+  --accent: #2563eb;
+  --accent-soft: rgba(37,99,235,0.1);
+  --typing-dot: rgba(15,23,42,0.6);
+
+  --rail-label: #333;
+  --rail-hover-bg: rgba(0, 0, 0, 0.07);
+  --rail-active-bg: rgba(0, 0, 0, 0.12);
+}
+
+/* ========== Reset rapide ========== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: var(--extraction-font-family);
+  font-size: var(--extraction-font-size);
+  line-height: var(--extraction-line-height);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* ========== Rail gauche (version élargie + labels horizontaux) ========== */
+.app-rail {
+  width: var(--rail-width);
+  background: rgba(2,6,23,0.2);
+  border-right: 1px solid rgba(255,255,255,0.03);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+
+  /* important : on NE répartit plus l'espace */
+  justify-content: flex-start;
+
+  padding: .75rem .6rem .7rem; /* un peu plus d'espace horizontal pour labels */
+  gap: 1rem;
+}
+
+
+/* Rail clair */
+html[data-theme="light"] .app-rail,
+body[data-theme="light"] .app-rail {
+  background: rgba(255,255,255,0.65);
+}
+
+.rail-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+
+  /* truc magique : pousse ce bloc vers le bas */
+  margin-top: auto;
+}
+
+.rail-top {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+}
+/* === Logo dans le rail (statique) === */
+
+.brand-logo-frame {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 0.5rem auto;      /* centré dans le rail */
+  box-sizing: border-box;
+}
+
+.brand-logo-ring {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* image du logo */
+.brand-logo-img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 12px;
+  display: block;
+  z-index: 2;
+}
+
+/* anneau animé lorsqu'on est en is-loading */
+.brand-logo-frame.is-loading .brand-logo-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 3px solid rgba(255,255,255,0.06); /* anneau discret */
+  border-top-color: rgba(59,130,246,0.95);   /* accent visible */
+  border-right-color: rgba(59,130,246,0.55);
+  z-index: 1;
+  animation: brand-spinner-arc 0.85s linear infinite;
+  transform-origin: center center;
+}
+
+/* si besoin d'un glow/ombre pendant réflexion */
+.brand-logo-frame.is-loading .brand-logo-ring::after {
+  content: "";
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  box-shadow: 0 6px 18px rgba(59,130,246,0.08);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Désactiver l'anneau animé dans le rail gauche */
+.brand-logo-frame.is-loading .brand-logo-ring::before {
+  display: none !important;
+  animation: none !important;
+  content: none !important;
+}
+
+@keyframes brand-spinner-arc {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* petites adaptations mobile */
+@media (max-width: 720px) {
+  .brand-logo-frame { width: 60px; height: 60px; }
+  .brand-logo-ring  { width: 52px; height: 52px; }
+  .brand-logo-img   { width: 42px; height: 42px; }
+}
+
+/* bouton du rail : emoji + petit label à droite */
+.rail-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 9px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .12s ease-out, transform .12s ease-out;
+  color: var(--text);
+  font-size: 1.45rem; /* taille emoji */
+}
+
+.rail-btn span.label {
+  font-size: 0.9rem;        /* légèrement plus grand */
+  font-weight: 600;         /* lettres un peu plus grasses */
+  letter-spacing: 0.01em;
+  line-height: 1;
+  color: var(--rail-label);
+  transform-origin: left center;
+}
+
+.rail-btn:hover {
+  background: var(--rail-hover-bg);
+  transform: translateY(-1px);
+}
+
+.rail-btn.is-active {
+  background: var(--rail-active-bg);
+  outline: 1px solid rgba(59,130,246,0.15);
+  color: #fff;
+}
+html[data-theme="light"] .rail-btn.is-active,
+body[data-theme="light"] .rail-btn.is-active {
+  color: #0f172a;
+}
+
+/* thème toggle */
+#theme-toggle {
+  opacity: 0.85;
+}
+#theme-toggle:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* ===== Bouton Thème : forcer le même comportement que les autres ===== */
+
+#theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 9px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .12s ease-out, transform .12s ease-out;
+  color: var(--text);
+  font-size: 1.45rem;
+  opacity: 0.85;
+  pointer-events: auto;          /* au cas où quelque chose l'aurait désactivé */
+}
+
+#theme-toggle:hover {
+  background: var(--rail-hover-bg);  /* même hover que .rail-btn */
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* pour s'assurer que le label du bouton thème ressemble aux autres */
+#theme-toggle .label {
+  font-size: 0.7rem;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--rail-label);
+  transform-origin: left center;
+}
+
+/* Uniformisation des panneaux latéraux : appliquer le style "Outils & Synthèse" à tous les panels */
+.side-panel .panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+/* titre / sous-titres */
+.side-panel .panel-body .panel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  padding: 0;
+}
+.side-panel .panel-body .panel-subtitle {
+  font-size: .78rem;
+  opacity: .9;
+}
+
+/* labels / aides */
+.side-panel .panel-body .panel-label,
+.side-panel .panel-body .panel-hint {
+  font-size: .75rem;
+  line-height: 1.3;
+  color: var(--text-soft);
+}
+
+/* inputs & selects dans les panneaux */
+.side-panel .panel-body .panel-input,
+.side-panel .panel-body .tools-input,
+.side-panel .panel-body select,
+.side-panel .panel-body textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: .65rem;
+  padding: .45rem .6rem;
+  font-size: .78rem;
+  color: inherit;
+}
+html[data-theme="light"] .side-panel .panel-body .panel-input,
+html[data-theme="light"] .side-panel .panel-body .tools-input,
+html[data-theme="light"] .side-panel .panel-body select,
+html[data-theme="light"] .side-panel .panel-body textarea {
+  background: rgba(255,255,255,0.85);
+  border: 1px solid rgba(15,23,42,0.03);
+}
+
+/* actions / boutons pleins ou outlines */
+.side-panel .panel-body .tools-action,
+.side-panel .panel-body .btn.w-full {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent), #1d4ed8);
+  border: none;
+  border-radius: .7rem;
+  padding: .5rem .5rem;
+  font-size: .78rem;
+  font-weight: 500;
+  text-align: center;
+}
+.side-panel .panel-body .tools-action--outline,
+.side-panel .panel-body .btn.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: inherit;
+}
+html[data-theme="light"] .side-panel .panel-body .tools-action--outline,
+html[data-theme="light"] .side-panel .panel-body .btn.btn-outline {
+  border-color: rgba(15,23,42,0.11);
+}
+
+/* zones de code / sorties */
+.side-panel .panel-body .panel-code,
+.side-panel .panel-body #extractOutput {
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.02);
+  border-radius: .6rem;
+  font-family: var(--extraction-font-family);
+  line-height: var(--extraction-line-height);
+  font-size: .7rem; /* tu peux monter à 0.85rem si tu veux plus lisible */
+  padding: .5rem;
+  overflow: auto;
+}
+
+/* petit ajustement responsive si panneau devient étroit */
+@media (max-width: 980px) {
+  .side-panel .panel-body {
+    padding: .7rem;
+    gap: .6rem;
+  }
+  .side-panel .panel-body .panel-title { font-size: .95rem; }
+}
+
+/* ========== Rail replié mais récupérable ========== */
+
+body.rail-collapsed .app-rail {
+  width: 3.2rem; /* rail fin, juste les icônes */
+  padding-left: 0.3rem;
+  padding-right: 0.3rem;
+  overflow: hidden;
+  transition: width 0.18s ease-out, padding 0.18s ease-out;
+}
+
+/* on masque le label texte des boutons */
+body.rail-collapsed .app-rail .rail-btn .label {
+  display: none;
+}
+
+/* on masque le gros logo pour gagner de la place */
+body.rail-collapsed .app-rail .brand-logo-frame {
+  display: none;
+}
+
+/* on garde les boutons visibles (emoji seul) */
+body.rail-collapsed .app-rail .rail-btn {
+  justify-content: center;     /* on centre l'emoji */
+}
+
+/* optionnel : on peut réduire un peu la taille de la police en mode replié */
+body.rail-collapsed .app-rail .rail-btn {
+  font-size: 1.2rem;
+}
+
+/* ========== Structure générale ========== */
+.app-shell {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ========== Zone chat ========== */
+.chat-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  padding: 1.1rem 1.2rem 1.2rem;
+  gap: .85rem;
+}
+
+/* header du chat */
+.chat-header {
+  text-align: left;
+  padding-top: .3rem;
+  padding-bottom: .2rem;
+  padding-left: .6rem;
+}
+.chat-header h1 {
+  font-size: 1.5rem;   /* augmenté pour meilleure visibilité */
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+}
+
+/* gradient uniquement sur le texte */
+#title-text {
+  font-size: 1.5rem;
+  display: inline-block;
+}
+
+#title-emoji {
+  font-size: 1.2rem;
+  line-height: 1;
+  display: inline-block;
+  -webkit-text-fill-color: initial !important;
+  background: none !important;
+  filter: none !important;
+  transform: translateY(1px);
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .65rem;
+  scroll-behavior: smooth;
+  padding-right: .3rem;
+
+  /* --- Centrage des messages (bulles) au milieu de la page --- */
+  align-items: center; /* centre chaque ligne horizontalement */
+}
+/* ---------- Avatars chat : conteneur + image + anneau ---------- */
+
+/* ligne de chat : avatar à gauche, bien centré */
+.chat-row {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+}
+
+/* Anciennes définitions avatar (désactivées, remplacées par le bloc en bas du fichier) */
+/*
+.chat-row .avatar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+}
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 .5rem;
+  padding: 0;
+}
+
+.avatar img.avatar-img,
+.avatar-img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 50%;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.msg-avatar-wrap {
+  display: inline-block;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  padding: 0;
+  position: relative;
+  vertical-align: middle;
+  margin-right: 0;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.45);
+}
+
+.msg-avatar {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.msg-avatar-wrap.typing::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  border: 3px solid transparent;
+  border-top-color: rgba(59,130,246,0.95);
+  border-right-color: rgba(59,130,246,0.95);
+  pointer-events: none;
+  animation: chat-avatar-spinner 0.8s linear infinite;
+}
+
+@media (max-width: 720px) {
+  .chat-row .avatar, .msg-avatar-wrap { width: 46px; height: 46px; }
+  .msg-avatar { width: 36px; height: 36px; }
+}
+*/
+
+/* typing animation */
+.typing {
+  display: inline-flex;
+  gap: .25rem;
+  align-items: center;
+}
+.typing .dot {
+  width: .4rem;
+  height: .4rem;
+  background: var(--typing-dot);
+  border-radius: 9999px;
+  animation: pulse 1s infinite ease-in-out;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.02) inset;
+}
+.typing .dot:nth-child(2) { animation-delay: .15s; }
+.typing .dot:nth-child(3) { animation-delay: .3s; }
+@keyframes pulse {
+  0%, 100% { opacity: .25; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
+}
+
+/* ========== Input chat ========== */
+.chat-input-bar {
+  display: flex;
+  gap: .6rem;
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 1.15rem;
+  padding: .45rem .45rem .45rem .8rem;
+  align-items: center;
+  /* centrage + largeur limitée pour ne pas prendre toute la page */
+  max-width: 920px;        /* largeur max confortable sur grand écran */
+  width: calc(100% - 2.4rem); /* laisse des marges latérales */
+  margin: 0 auto;          /* centre horizontalement */
+  box-shadow: none;
+  border-radius: .6rem;    /* un peu moins arrondi pour rendu plus rectangulaire */
+}
+.chat-input-bar textarea {
+  min-height: 3.2rem;       /* un peu plus compacte */
+  padding: 0.5rem 0.8rem;
+  line-height: 1.4;
+  font-size: 1.02rem;          /* texte lisible */
+  border-radius: .45rem;
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  resize: none;
+}
+
+/* Conteneur ligne : indicateur gauche + barre de chat à droite (centrée) */
+.chat-input-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 920px;
+  margin: 0 auto;            /* centre le bloc global */
+  padding: 0 0.6rem;
+}
+
+/* indicateur : taille fixe, garde son contenu empilé si nécessaire */
+.chat-context-indicator {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* barre de chat occupe l'espace restant et reste centrée visuellement */
+.chat-input-row .chat-input-bar {
+  flex: 1 1 auto;
+  max-width: 760px;
+  margin: 0; /* déjà centré par le conteneur parent */
+}
+
+/* Sur petit écran on empile verticalement */
+@media (max-width: 720px) {
+  .chat-input-row {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .chat-context-indicator {
+    justify-content: flex-start;
+    padding-top: .45rem;
+  }
+  .chat-input-row .chat-input-bar {
+    width: 100%;
+  }
+}
+
+/* Correction présentation panneau droit : aligner les éléments internes à gauche */
+.side-panel .panel-body {
+  text-align: left;
+}
+
+.side-panel .panel-body .panel-label,
+.side-panel .panel-body .panel-hint,
+.side-panel .panel-body .panel-toggle,
+.side-panel .panel-body .panel-input,
+.side-panel .panel-body .tools-input,
+.side-panel .panel-body select,
+.side-panel .panel-body .panel-subtitle {
+  display: block;
+  text-align: left;
+}
+
+/* Pour les toggles / labels qui pouvaient être centrés */
+.side-panel .panel-body .panel-toggle {
+  align-items: center;
+  gap: .45rem;
+}
+
+/* s'assurer que les boutons prennent toute la largeur et alignent le texte à gauche si besoin */
+.side-panel .panel-body .btn.w-full,
+.side-panel .panel-body .tools-action {
+  text-align: center; /* garder l'action centrée, mais éléments explicatifs restent left */
+}
+
+/* ---------- Ajustements titres : barre droite + titre central ---------- */
+
+/* Titres des panneaux latéraux (barre de droite) — un peu plus grands et visibles */
+.side-panel .panel-body .panel-title {
+  font-size: 1.25rem;    /* taille augmentée */
+  font-weight: 700;      /* plus marqué */
+  letter-spacing: 0.01em;
+  margin-bottom: 0.15rem;
+  color: var(--text);    /* conserve contraste avec le thème */
+}
+
+/* Sous-titres légèrement ajustés pour rester proportionnels */
+.side-panel .panel-body .panel-subtitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+/* Titre central (ex: "Analyste judiciaire IA") : couleur accentuée en bleu */
+.chat-header h1,
+#title-text {
+  color: var(--accent);         /* aligné sur le bleu de l'app (variable --accent) */
+  -webkit-text-fill-color: unset;
+  font-weight: 800;
+  text-shadow: none;
+}
+
+/* Ajust responsive pour garder proportions */
+@media (max-width: 980px) {
+  .side-panel .panel-body .panel-title { font-size: 1.05rem; }
+  .chat-header h1, #title-text { font-size: 1.15rem; }
+}
+
+/* Modal d'aide : fond couvrant + centrage plus propre */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;                        /* top:0; right:0; bottom:0; left:0 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2,6,23,0.6);    /* voile sombre */
+  z-index: 9999;                   /* au-dessus de tout */
+  padding: 1.5rem;                 /* espace pour mobiles */
+  box-sizing: border-box;
+}
+
+/* Conteneur modal */
+.modal-backdrop .modal {
+  background: var(--surface);
+  color: var(--text);
+  max-width: 980px;
+  width: 100%;
+  max-height: calc(100vh - 3rem);  /* laisser de la place pour le padding */
+  overflow-y: auto;
+  border-radius: 0.8rem;
+  padding: 1.25rem 1.4rem;
+  box-shadow: 0 10px 40px rgba(2,6,23,0.6);
+  border: 1px solid rgba(255,255,255,0.04);
+  transform-origin: center;
+}
+
+/* Améliore transitions Alpine (si utilisées) */
+.modal-backdrop[x-cloak] { display: none !important; }
+
+/* Sur petits écrans : modal occupe presque toute la hauteur et largeur */
+@media (max-width: 720px) {
+  .modal-backdrop {
+    padding: 0.75rem;
+    align-items: flex-start;
+  }
+  .modal-backdrop .modal {
+    max-width: 100%;
+    max-height: calc(100vh - 1.5rem);
+    border-radius: 0.6rem;
+    padding: 1rem;
+  }
+}
+
+/* Assurer que la modale capte bien les clics (fermeture via @click.outside reste fonctionnelle) */
+.modal-backdrop .modal { pointer-events: auto; }
+
+/* Aide modal — sommaire & titres */
+.modal .help-toc {
+  margin-bottom: 0.6rem;
+  border-left: 3px solid rgba(148,163,184,0.06);
+  padding-left: 0.8rem;
+}
+.modal .help-toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+.modal .help-toc a {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.82rem;
+  opacity: 0.95;
+}
+.modal .help-toc a:hover { text-decoration: underline; }
+
+/* Titres des sections dans la modale : plus gros et gras */
+.modal .help-section-title {
+  font-size: 0.95rem; /* plus lisible */
+  font-weight: 700;
+  margin-top: 0.6rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Assurer que la modale peut défiler proprement */
+.modal {
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  padding-right: 0.4rem;
+}
+
+/* léger espacement des paragraphes pour visibilité */
+.modal p, .modal ul { line-height: 1.45; }
+
+/* Ancien bloc mobile avatar (désactivé, remplacé par le bloc en bas) */
+/*
+@media (max-width: 720px) {
+  .msg-avatar { width: 40px; height: 40px; }
+}
+*/
+
+/* Si tu veux un effet supplémentaire sur les dots typing */
+.typing .dot { transform-origin: center; }
+
+/* Dots typing — forcer visibilité et animation (augmenter taille si besoin) */
+.typing.dots {
+  display: inline-flex;
+  gap: .35rem;
+  align-items: center;
+  vertical-align: middle;
+}
+.typing.dots .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--text);
+  border-radius: 999px;
+  opacity: 0.9;
+  transform-origin: center;
+  animation: dot-bounce 1s infinite ease-in-out;
+}
+.typing.dots .dot:nth-child(2) { animation-delay: 0.12s; }
+.typing.dots .dot:nth-child(3) { animation-delay: 0.24s; }
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* Ancien bloc "Mobile sizes" touchant msg-avatar-wrap (désactivé) */
+/*
+@media (max-width: 720px) {
+  .msg-avatar-wrap { width: 46px; height: 46px; }
+  .msg-avatar-wrap.typing::after { width: calc(100% + 14px); height: calc(100% + 14px); }
+  .typing.dots .dot { width: 7px; height: 7px; }
+}
+*/
+
+/* Légère augmentation de la police du chat pour meilleure lisibilité */
+.chat-bubble {
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+/* Zone de saisie */
+.chat-input-bar textarea {
+  font-size: 1.02rem;
+  line-height: 1.4;
+}
+
+/* Ajustement des sources/messages pour rester proportionnés */
+.chat-source-pill, .chat-source-pill--muted {
+  font-size: 0.92rem;
+}
+
+/* ───── Empêcher les doublons d'avatars dans les bulles ─────
+   On garde UNIQUEMENT la colonne avatar à gauche.
+   Si le HTML du message contient encore un avatar (hérité de l'ancien système),
+   on le masque ici.
+*/
+/* (bloc supprimé : règles masquant les avatars dans .chat-bubble) */
+
+/* === Désactivation totale de l'animation du logo dans le rail === */
+.brand-logo-frame::before,
+.brand-logo-frame.is-loading::before {
+  content: none !important;
+  animation: none !important;
+}
+
+/* Ancien bloc "LOCK AVATARS EN CERCLE" (désactivé, redondant) */
+/*
+.chat-row .avatar,
+.avatar {
+  width: 52px !important;
+  height: 52px !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+}
+
+.msg-avatar-wrap,
+.msg-avatar {
+  width: 44px !important;
+  height: 44px !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+  display: block !important;
+}
+
+@media (max-width: 720px) {
+  .chat-row .avatar,
+  .avatar {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
+  .msg-avatar-wrap,
+  .msg-avatar {
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+*/
+
+/* === AXION — AVATARS CHAT : USER + ASSISTANT (LLM) — BLOC CANONIQUE === */
+
+/* Colonne avatar (gauche de chaque message) */
+.chat-row .avatar,
+.avatar {
+  width: 52px;
+  height: 52px;
+  aspect-ratio: 1/1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 .5rem;
+  padding: 0;
+  flex: 0 0 auto;
+  background: transparent;
+}
+
+/* Avatar utilisateur (emoji ou image simple) */
+.avatar img.avatar-img,
+.avatar-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* ----- Avatar ASSISTANT (LLM) ----- */
+
+/* Wrapper autour du logo assistant */
+.msg-avatar-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  aspect-ratio: 1/1;
+  border-radius: 50%;
+  padding: 0;
+  margin-right: 0;
+  position: relative;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;   /* plus d'ombre parasite */
+  box-sizing: border-box;
+}
+
+/* Image du logo assistant (logo-chat.png) */
+.msg-avatar {
+  width: 40px;
+  height: 40px;
+  aspect-ratio: 1/1;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  position: relative;
+  z-index: 1;   /* logo au-dessus du fond, sous l'anneau */
+}
+
+/* ----- ANNEAU D'ANIMATION (affiché uniquement quand l’assistant réfléchit) ----- */
+.msg-avatar-wrap.typing::after {
+  content: "";
+  position: absolute;
+
+  /* l’anneau déborde légèrement autour du logo : parfait centrage ≥ */
+  inset: -2px;        /* crée un anneau extérieur (≈48×48) autour du wrapper 44×44 */
+  border-radius: 50%;
+  box-sizing: border-box;
+
+  /* Anneau partiel : seulement deux côtés visibles */
+  border-width: 3px;
+  border-style: solid;
+  border-color: transparent;
+  border-top-color: rgba(59,130,246,0.98);
+  border-right-color: rgba(59,130,246,0.98);
+
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  animation: chat-avatar-spinner 0.8s linear infinite;
+
+  z-index: 2; /* anneau au-dessus du logo */
+}
+
+/* Animation de rotation */
+@keyframes chat-avatar-spinner {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ----- Typing dots (texte) ----- */
+.typing.dots {
+  display: inline-flex;
+  gap: .35rem;
+  align-items: center;
+  vertical-align: middle;
+}
+.typing.dots .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--text);
+  border-radius: 9999px;
+  opacity: 0.9;
+  transform-origin: center;
+  animation: dot-bounce 1s infinite ease-in-out;
+}
+.typing.dots .dot:nth-child(2) { animation-delay: 0.12s; }
+.typing.dots .dot:nth-child(3) { animation-delay: 0.24s; }
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* ----- MOBILE ----- */
+@media (max-width: 720px) {
+
+  .chat-row .avatar,
+  .avatar {
+    width: 46px;
+    height: 46px;
+  }
+
+  .msg-avatar-wrap {
+    width: 40px;
+    height: 40px;
+  }
+
+  .msg-avatar {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Mobile : on réduit tout proportionnellement */
+@media (max-width: 720px) {
+  .chat-row .avatar,
+  .avatar {
+    width: 46px;
+    height: 46px;
+  }
+  .msg-avatar-wrap {
+    width: 40px;
+    height: 40px;
+  }
+  .msg-avatar {
+    width: 36px;
+    height: 36px;
+  }
+}
+/*************************************************
+ * AXION NOVA THEME — Overrides visuels complets
+ * (À coller en BAS de main.css)
+ *************************************************/
+
+/* Palette globale (sombre & claire) */
+:root {
+  /* Fond général (sombre) */
+  --bg: radial-gradient(1200px 780px at 10% -12%, #0b1220 0%, #020617 55%, #020617 100%);
+  --surface: rgba(15,23,42,0.86);
+  --elevated: rgba(15,23,42,0.96);
+  --border: rgba(148,163,184,0.25);
+  --muted: rgba(148,163,184,0.8);
+  --text: #e5e7eb;
+  --text-soft: rgba(209,213,219,0.8);
+  --accent: #3b82f6;
+  --accent-soft: rgba(59,130,246,0.14);
+  --danger: #f97316;
+  --typing-dot: rgba(226,232,240,0.55);
+
+  /* rail */
+  --rail-label: #cbd5f5;
+  --rail-hover-bg: rgba(148,163,184,0.14);
+  --rail-active-bg: rgba(59,130,246,0.16);
+
+  /* logos */
+  --logo-left-max-width: 150px;
+  --logo-left-max-height: 72px;
+}
+
+/* Variante claire */
+html[data-theme="light"],
+body[data-theme="light"] {
+  --bg: radial-gradient(1200px 780px at 10% -12%, #f9fafb 0%, #e5edf8 52%, #dbe4f0 100%);
+  --surface: rgba(255,255,255,0.88);
+  --elevated: rgba(255,255,255,0.96);
+  --border: rgba(148,163,184,0.35);
+  --muted: rgba(100,116,139,0.85);
+  --text: #0f172a;
+  --text-soft: rgba(51,65,85,0.9);
+  --accent: #2563eb;
+  --accent-soft: rgba(37,99,235,0.14);
+  --typing-dot: rgba(51,65,85,0.8);
+
+  --rail-label: #1f2937;
+  --rail-hover-bg: rgba(148,163,184,0.15);
+  --rail-active-bg: rgba(37,99,235,0.16);
+}
+
+/* =========================
+ *  Fond global / layout
+ * ========================= */
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Inter", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* shell principal : léger padding sur grands écrans */
+.app-shell {
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+/* =========================
+ * Rail gauche — look “glass”
+ * ========================= */
+
+.app-rail {
+  background: linear-gradient(
+      to bottom,
+      rgba(15,23,42,0.86),
+      rgba(15,23,42,0.9)
+    );
+  border-right: 1px solid rgba(15,23,42,0.95);
+  box-shadow: 6px 0 22px rgba(15,23,42,0.75);
+  backdrop-filter: blur(22px);
+}
+
+/* Claire */
+html[data-theme="light"] .app-rail,
+body[data-theme="light"] .app-rail {
+  background: linear-gradient(
+    to bottom,
+    rgba(248,250,252,0.96),
+    rgba(241,245,249,0.98)
+  );
+  border-right: 1px solid rgba(203,213,225,0.9);
+  box-shadow: 6px 0 22px rgba(148,163,184,0.55);
+}
+
+/* Logo rail : un peu plus grand, mieux mis en valeur */
+.brand-logo-frame {
+  width: 72px;
+  height: 72px;
+  margin: 0.2rem auto 0.2rem;
+}
+
+.brand-logo-ring {
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle at 30% 20%, rgba(59,130,246,0.45), transparent 55%);
+  box-shadow: 0 10px 30px rgba(15,23,42,0.7);
+}
+
+.brand-logo-img {
+  width: 44px;
+  height: 44px;
+}
+
+/* Boutons du rail : plus nets, légèrement plus compacts */
+.rail-btn {
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-size: 1.3rem;
+}
+
+.rail-btn span.label {
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Bouton thème conforme aux autres */
+#theme-toggle {
+  border-radius: 9999px;
+  font-size: 1.15rem;
+}
+
+/* Rail replié : mini pastilles propres */
+body.rail-collapsed .app-rail {
+  box-shadow: none;
+}
+
+/* =========================
+ * En-tête & zone de chat
+ * ========================= */
+
+.chat-shell {
+  background: radial-gradient(
+      1100px 540px at 0% 0%,
+      rgba(56,189,248,0.07),
+      transparent 55%
+    ),
+    radial-gradient(
+      1200px 640px at 90% 5%,
+      rgba(129,140,248,0.14),
+      transparent 60%
+    );
+}
+
+/* header titre */
+.chat-header h1,
+#title-text {
+  font-size: 1.6rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Liste messages : centrée, mais bulle max-width pour lisibilité */
+.chat-messages {
+  align-items: center;
+  padding-right: 0.6rem;
+}
+
+.chat-row {
+  width: 100%;
+  max-width: 920px;
+}
+
+/* Bulle globale */
+.chat-bubble {
+  background: var(--surface);
+  border-radius: 1rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid rgba(148,163,184,0.25);
+  box-shadow:
+    0 18px 40px rgba(15,23,42,0.65),
+    0 0 0 1px rgba(15,23,42,0.4);
+  font-size: 1.02rem;
+  line-height: 1.5;
+}
+
+/* Claire */
+html[data-theme="light"] .chat-bubble,
+body[data-theme="light"] .chat-bubble {
+  background: rgba(255,255,255,0.96);
+  border-color: rgba(148,163,184,0.35);
+  box-shadow:
+    0 14px 32px rgba(148,163,184,0.45),
+    0 0 0 1px rgba(226,232,240,0.7);
+}
+
+/* Messages assistant : légère bande latérale bleue */
+.chat-bubble.assistant,
+.chat-row.assistant .chat-bubble {
+  border-left: 3px solid var(--accent);
+}
+
+/* Messages user : fond un chouïa différent */
+.chat-bubble.user,
+.chat-row.user .chat-bubble {
+  background: linear-gradient(
+    135deg,
+    rgba(15,23,42,0.95),
+    rgba(15,23,42,0.9)
+  );
+}
+
+/* Claire — user */
+html[data-theme="light"] .chat-bubble.user,
+html[data-theme="light"] .chat-row.user .chat-bubble {
+  background: linear-gradient(
+    135deg,
+    rgba(248,250,252,0.98),
+    rgba(241,245,249,0.98)
+  );
+}
+
+/* Animation apparition assistant */
+.chat-row.assistant,
+.chat-row .assistant-appear {
+  animation: axion-assistant-in 0.35s ease-out;
+}
+@keyframes axion-assistant-in {
+  0%   { opacity: 0; transform: translateY(6px) scale(0.99); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* =========================
+ * Avatar assistant + halo
+ * ========================= */
+
+/* halo flou soft pendant réflexion */
+.msg-avatar-wrap.typing::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(59,130,246,0.3) 0%,
+    rgba(59,130,246,0.08) 35%,
+    transparent 70%
+  );
+  filter: blur(10px);
+  opacity: 0.8;
+  animation: avatar-glow 2.2s ease-in-out infinite alternate;
+  z-index: 0;
+}
+@keyframes avatar-glow {
+  0%   { opacity: 0.45; transform: scale(0.95); }
+  100% { opacity: 0.95; transform: scale(1.03); }
+}
+
+/* =========================
+ * Barre d’entrée chat
+ * ========================= */
+
+.chat-input-bar {
+  background: var(--surface);
+  border-radius: 9999px;
+  border: 1px solid rgba(148,163,184,0.35);
+  box-shadow:
+    0 12px 30px rgba(15,23,42,0.7),
+    0 0 0 1px rgba(15,23,42,0.7);
+}
+
+/* Claire */
+html[data-theme="light"] .chat-input-bar,
+body[data-theme="light"] .chat-input-bar {
+  background: rgba(255,255,255,0.98);
+  border-color: rgba(148,163,184,0.6);
+  box-shadow:
+    0 12px 26px rgba(148,163,184,0.5),
+    0 0 0 1px rgba(226,232,240,0.8);
+}
+
+/* Bouton envoyer (si c’est un bouton .btn dans la barre) */
+.chat-input-bar .btn,
+.chat-input-bar button[type="submit"] {
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--accent), #1d4ed8);
+  border: none;
+  box-shadow: 0 7px 16px rgba(37,99,235,0.55);
+}
+
+/* =========================
+ * Panneau droit (boîte à outils)
+ * ========================= */
+
+.side-panel {
+  background: linear-gradient(
+      180deg,
+      rgba(15,23,42,0.85),
+      rgba(15,23,42,0.97)
+    );
+  border-left: 1px solid rgba(15,23,42,0.9);
+  box-shadow: -18px 0 40px rgba(15,23,42,0.9);
+}
+
+/* Claire */
+html[data-theme="light"] .side-panel,
+body[data-theme="light"] .side-panel {
+  background: linear-gradient(
+      180deg,
+      rgba(248,250,252,0.94),
+      rgba(241,245,249,0.98)
+    );
+  border-left: 1px solid rgba(203,213,225,0.95);
+  box-shadow: -18px 0 40px rgba(148,163,184,0.5);
+}
+
+/* Titres outils */
+.side-panel .panel-body .panel-title {
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Boutons d’action */
+.side-panel .panel-body .tools-action,
+.side-panel .panel-body .btn.w-full {
+  border-radius: 9999px;
+  box-shadow: 0 9px 22px rgba(37,99,235,0.55);
+}
+
+/* Inputs */
+.side-panel .panel-body .panel-input,
+.side-panel .panel-body .tools-input,
+.side-panel .panel-body textarea {
+  border-radius: 0.75rem;
+}
+
+/* =========================
+ * Barre de progression / tâches longues
+ * ========================= */
+
+.progress-bar,
+#global-progress,
+.progress {
+  border-radius: 9999px;
+  overflow: hidden;
+  background: rgba(15,23,42,0.65);
+}
+
+.progress-bar-inner,
+.progress-inner {
+  background: linear-gradient(90deg, var(--accent), #22c55e);
+}
+
+/* =========================
+ * Modal d’aide : léger refonte
+ * ========================= */
+
+.modal-backdrop .modal {
+  border-radius: 1rem;
+  border: 1px solid rgba(148,163,184,0.5);
+  background: radial-gradient(
+      900px 420px at 0% 0%,
+      rgba(59,130,246,0.12),
+      transparent 50%
+    ),
+    var(--surface);
+}
+
+/* Un peu plus d’espace dans la modale */
+.modal p,
+.modal ul {
+  line-height: 1.6;
+}
+
+/* make chat message block relative so action button can be positioned */
+.chat-msg-block {
+  position: relative;
+}
+
+/* petit bouton copier dans le coin de la bulle assistant */
+/* Version mise à jour : bouton un peu plus grand et sobre */
+.chat-copy-btn {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.55rem;
+
+  /* —— Taille augmentée —— */
+  font-size: 0.85rem;          /* au lieu de 0.7rem */
+  padding: 0.25rem 0.45rem;    /* un peu plus large et haut */
+
+  border-radius: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+
+  background: rgba(15, 23, 42, 0.85);
+  color: rgba(226, 232, 240, 0.95);
+
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 150ms ease, transform 150ms ease, background 150ms ease;
+  z-index: 5;
+}
+
+/* apparition au survol */
+.chat-msg-block:hover .chat-copy-btn {
+  opacity: 1;
+}
+
+/* hover plus visible */
+.chat-copy-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(37, 99, 235, 0.9);
+  border-color: rgba(147, 197, 253, 0.85);
+}

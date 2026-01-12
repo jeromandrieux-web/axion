@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PORT="${1:-}"  # si tu précises un port, on le cible
+
+# 1) Essai ciblé (process démarré par uvicorn avec backend.main:app)
+pkill -f 'uvicorn.*backend\.main:app' && echo "✅ Uvicorn backend.main arrêté (pattern)" || true
+
+# 2) Si un port est fourni, tue ce qui écoute dessus
+if [[ -n "${PORT}" ]]; then
+  PIDS=$(lsof -tiTCP:"$PORT" -sTCP:LISTEN || true)
+  if [[ -n "$PIDS" ]]; then
+    echo "⚠️  Process sur port $PORT : $PIDS → kill"
+    kill $PIDS 2>/dev/null || kill -9 $PIDS 2>/dev/null || true
+  fi
+fi
+
+echo "🛑 Terminé."
