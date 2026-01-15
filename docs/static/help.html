@@ -1,0 +1,275 @@
+<!-- Aide – contenu chargé dynamiquement -->
+<div class="help-content-inner">
+  <h2 class="panel-title mb-3">Aide — Démarrer & Guide pas à pas</h2>
+
+  <!-- Bouton Fermer (appel window.closeHelp()) -->
+  <button
+    class="help-close-btn"
+    aria-label="Fermer l'aide"
+    onclick="window.closeHelp && window.closeHelp()"
+    style="position:absolute; right:.6rem; top:.6rem; background:transparent; border:0; font-size:1.1rem; cursor:pointer;">
+    ✕
+  </button>
+
+  <nav class="help-toc" aria-label="Sommaire de l'aide">
+    <ul>
+      <li><a href="#sec-1">1. Créer ou choisir une affaire</a></li>
+      <li><a href="#sec-2">2. Travailler sans affaire</a></li>
+      <li><a href="#sec-3">3. Ajouter des documents (ingestion)</a></li>
+      <li><a href="#sec-4">4. Glisser un document dans le chat</a></li>
+      <li><a href="#sec-5">5. Synthèses</a></li>
+      <li><a href="#sec-6">6. Extraction d’une personne</a></li>
+      <li><a href="#sec-7">7. Extraction téléphonique</a></li>
+      <li><a href="#sec-8">8. Extractions thématiques</a></li>
+      <li><a href="#sec-9">9. Confidentialité & pseudonymisation</a></li>
+      <li><a href="#sec-10">10. Dépannage & bonnes pratiques</a></li>
+      <li><a href="#sec-11">11. Exemples de questions guidées (10)</a></li>
+    </ul>
+  </nav>
+
+  <p class="panel-hint" style="margin-bottom:.6rem;">
+    Axion est un <strong>assistant judiciaire intelligent</strong>. Il fonctionne autour d’un concept
+    d’<strong>affaire</strong> (dossier) : vous pouvez travailler <em>dans une affaire</em> (mémoire du dossier)
+    ou <em>sans affaire</em> (mode libre).
+  </p>
+
+  <!-- 1. Affaire -->
+  <section id="sec-1" class="help-section">
+    <h3 class="help-section-title">1. Créer ou choisir une affaire 📁</h3>
+    <p>Une <strong>affaire</strong> permet de regrouper documents, synthèses et extractions pour un même dossier.</p>
+    <ol>
+      <li><strong>Créer</strong> : ouvrir le panneau <strong>📁 Affaires</strong> → bouton <em>Nouvelle affaire</em> → renseigner titre + référence (ex. <code>vol_2024</code>) → valider.</li>
+      <li><strong>Choisir</strong> : sélectionner une affaire dans la liste — elle devient le <strong>contexte actif</strong> (ingestion, synthèses, extractions s’y rattachent).</li>
+      <li><strong>Vérifier</strong> : le nom de l’affaire apparaît près du chat et dans les panneaux latéraux. Les fichiers générés (synthèses…) sont enregistrés dans <code>/storage/cases/&lt;affaire&gt;/</code>.</li>
+      <li><strong>Conseil</strong> : créez une affaire même pour vos tests, afin d’éviter de mélanger les documents de plusieurs dossiers.</li>
+    </ol>
+  </section>
+
+  <!-- 2. Sans affaire -->
+  <section id="sec-2" class="help-section">
+    <h3 class="help-section-title">2. Travailler sans affaire 🔓</h3>
+    <p>Utilisez ce mode pour des questions ponctuelles ou des tests, sans rattacher les résultats à un dossier.</p>
+    <ol>
+      <li>Ouvrir <strong>⚙️ Paramètres</strong>.</li>
+      <li>Désactiver <em>Travailler dans l'affaire sélectionnée</em>.</li>
+      <li>Le chat fonctionne alors comme un <strong>assistant généraliste</strong> : il répond sans utiliser les documents d’une affaire.</li>
+      <li>Vous pouvez quand même déposer un document dans le chat : il sera utilisé comme <strong>contexte temporaire</strong> pour la conversation en cours (voir section 4).</li>
+      <li>Le bouton <strong>🧹</strong> (près du chat) permet de <strong>vider l’historique de la conversation</strong> et de repartir sur une page blanche. Cela ne supprime ni les affaires ni les documents ingérés.</li>
+    </ol>
+  </section>
+
+  <!-- 3. Ingestion -->
+  <section id="sec-3" class="help-section">
+    <h3 class="help-section-title">3. Ajouter des documents (ingestion) 📥</h3>
+    <p>L’ingestion permet à Axion de <strong>lire et indexer les pièces d’un dossier</strong> pour les utiliser dans les synthèses et recherches.</p>
+    <ol>
+      <li><strong>Préparer</strong> : regrouper les fichiers pertinents (PDF, DOCX, TXT…). Privilégier des scans lisibles si OCR est nécessaire.</li>
+      <li><strong>Importer</strong> : ouvrir le panneau <strong>📥 Ingestion</strong> → glisser-déposer les fichiers ou utiliser le sélecteur → vérifier la liste.</li>
+      <li><strong>Affaire cible</strong> : vérifier que la bonne affaire est sélectionnée (indiquée dans le panneau).</li>
+      <li><strong>Lancer</strong> : cliquer <em>Lancer l’ingestion</em>. Suivre la barre de progression.</li>
+      <li><strong>Après ingestion</strong> : les documents font désormais partie de l’affaire. Ils pourront être utilisés pour :
+        <ul>
+          <li>les <strong>synthèses</strong> (thématique, longue, chronologique),</li>
+          <li>les <strong>extractions</strong> (personnes, numéros, thèmes),</li>
+          <li>les réponses du chat en mode “mémoire affaire”.</li>
+        </ul>
+      </li>
+    </ol>
+    <p><strong>Astuce</strong> : pour les gros volumes, ingérez par lots (ex. 50–100 pièces), vérifiez quelques résultats, puis continuez.</p>
+  </section>
+
+  <!-- 4. Doc dans le chat -->
+  <section id="sec-4" class="help-section">
+    <h3 class="help-section-title">4. Glisser un document dans le chat 🧷</h3>
+    <p>Mode rapide pour analyser un document ponctuel, sans forcément l'ajouter à une affaire.</p>
+    <ol>
+      <li>Glisser le fichier sur la zone de chat (ou utiliser le bouton d’attachement si présent). ⚠️ Taille limite 100&nbsp;Mo.</li>
+      <li>Le document est chargé et un bandeau <strong>« Document actif »</strong> apparaît sous la zone de saisie. Cela signifie que <strong>les prochaines réponses tiendront compte de ce document</strong>.</li>
+      <li>Saisir ensuite une question, par exemple :
+        <ul>
+          <li><em>« Fais un résumé détaillé de ce document. »</em></li>
+          <li><em>« Quels sont les faits principaux ? »</em></li>
+          <li><em>« Quels éléments défavorables et favorables pour la personne X ? »</em></li>
+        </ul>
+      </li>
+      <li>Le document chargé via le chat est utilisé comme <strong>contexte de conversation</strong>, mais n’est pas automatiquement ingéré dans l’affaire. Pour qu’il fasse partie du dossier, utilisez l’onglet <strong>📥 Ingestion</strong>.</li>
+      <li>Pour retirer le document du contexte, cliquez sur <strong>✕ Retirer</strong> dans le bandeau <em>Document actif</em>.</li>
+    </ol>
+    <p class="panel-hint">Le petit indicateur sous la zone de saisie vous rappelle le contexte : libre, dossier actif, et/ou document actif.</p>
+  </section>
+
+  <!-- 5. Synthèses -->
+  <section id="sec-5" class="help-section">
+    <h3 class="help-section-title">5. Synthèses ✍️</h3>
+    <p>Axion propose plusieurs types de synthèses adaptées aux besoins :</p>
+    <ul>
+      <li><strong>Rapport de synthèse</strong> — résumé structuré (Les faits, L’enquête, Les suspects, Arrestations & garde à vue, Conclusion). Rapide et formaté pour lecture opérationnelle.</li>
+      <li><strong>Synthèse chronologique</strong> — construction d’une chronologie synthétique à partir des pièces ingérées, utile pour reconstituer la suite des événements.</li>
+      <li><strong>Synthèse thématique</strong> — synthèse ciblée sur un thème (finances, téléphones, liens societaires…), regroupe les éléments pertinents par thème.</li>
+    </ul>
+    <p class="panel-hint">Remarque : la <em>synthèse longue</em> (appelant de gros prompts) a été retirée de l'interface pour éviter des timeouts. Pour obtenir un rendu détaillé, combinez une synthèse chronologique puis demandez des développements ciblés via le chat.</p>
+
+    <ol>
+      <li>Ouvrir le panneau <strong>🛠 Synthèses</strong>.</li>
+      <li>Choisir le type de synthèse (Courte / Chronologique / Thématique).</li>
+      <li>Régler les options (période, documents cibles, niveau de détail) si disponibles.</li>
+      <li>Lancer la génération et patienter : pour les gros dossiers, préférez la synthèse chronologique puis affinez en chat.</li>
+    </ol>
+  </section>
+
+  <!-- 6. Extraction personne -->
+  <section id="sec-6" class="help-section">
+    <h3 class="help-section-title">6. Extraction d’une personne 👤</h3>
+    <p>But : créer une <strong>fiche personne</strong> à partir des documents de l’affaire (identité, rôles, éléments marquants).</p>
+    <ol>
+      <li>Dans <strong>🛠 la boîte à outils</strong>, ouvrir l’outil <em>Extraction personne</em>.</li>
+      <li>Saisir le nom (et éventuellement l’année de naissance ou un alias), par exemple&nbsp;: <code>“Stéphane DUPONT né 1978”</code>.</li>
+      <li>Lancer l’extraction : Axion parcourt les documents de l’affaire et construit une fiche structurée (identité, adresses si mentionnées, liens avec d’autres personnes/téléphones, événements associés…).</li>
+      <li>La fiche s’affiche dans le chat. Vous pouvez la copier ou l’exporter en <strong>.txt</strong> selon les options proposées.</li>
+      <li>Vérifier et compléter manuellement si nécessaire : la fiche est un support de travail, pas une décision.</li>
+    </ol>
+    <p><strong>Astuce</strong> : mentionner des variantes (surnoms, orthographes proches) dans la zone de texte d’extraction peut améliorer la couverture.</p>
+  </section>
+
+  <!-- 7. Extraction téléphone -->
+  <section id="sec-7" class="help-section">
+    <h3 class="help-section-title">7. Extraction téléphonique 📱</h3>
+    <p>But : analyser une ligne ou rassembler les informations la concernant.</p>
+    <ol>
+      <li>Dans <strong>🛠 la boîte à outils</strong>, ouvrir l’outil <em>Extraction téléphonique</em>.</li>
+      <li>Saisir le numéro (format international conseillé), par exemple&nbsp;: <code>“+33 6 23 45 67 89”</code>.</li>
+      <li>Lancer : Axion recherche le numéro dans les pièces ingérées et produit une fiche (occurrences, correspondants, événements associés…).</li>
+      <li>Le résultat s’affiche dans le chat ; vous pouvez l’exporter en <strong>.txt</strong> si besoin.</li>
+    </ol>
+    <p><strong>Conseil</strong> : si un numéro semble absent, essayez différentes écritures (avec espaces, sans espaces, avec/ sans indicatif) ou interrogez l’assistant dans le chat.</p>
+  </section>
+
+  <!-- 8. Extractions thématiques -->
+  <section id="sec-8" class="help-section">
+    <h3 class="help-section-title">8. Extractions thématiques 🔎</h3>
+    <p>Les extractions thématiques permettent de cibler certains types d’informations dans les documents d’une affaire.</p>
+    <ol>
+      <li>Ouvrir <strong>🛠 la boîte à outils</strong> puis l’onglet <em>Extractions thématiques</em> (téléphones, IBAN, emails, plaques, etc.).</li>
+      <li>Choisir un thème, par exemple <em>Téléphones</em> ou <em>IBAN</em>.</li>
+      <li>Option <strong>“Lier au nom de la personne”</strong> : ne garder que ce qui apparaît à proximité d’un nom donné (utile pour lier un numéro à une personne).</li>
+      <li>Lancer l’extraction : une liste d’éléments trouvés est renvoyée, avec les sources (documents / pages / extraits).</li>
+      <li>Vous pouvez copier ces listes, les croiser avec d’autres outils ou les intégrer dans vos tableaux et rapports.</li>
+    </ol>
+  </section>
+
+  <!-- 9. Confidentialité & pseudonymisation -->
+  <section id="sec-9" class="help-section">
+    <h3 class="help-section-title">9. Confidentialité &amp; pseudonymisation 🔐</h3>
+    <p>Axion est conçu pour limiter la diffusion d’informations sensibles lorsque des modèles distants (cloud) sont utilisés.</p>
+    <ul>
+      <li><strong>Stockage local</strong> : les documents que vous ajoutez (PDF, Word, TXT, etc.) sont stockés <strong>localement</strong> sur votre machine, dans le dossier d’Axion.</li>
+      <li><strong>Contenu envoyé aux modèles distants</strong> : lorsqu’un modèle d’IA distant est utilisé, Axion n’envoie que le <strong>contenu strictement nécessaire</strong> pour répondre à votre question, pas l’ensemble de la procédure.</li>
+      <li><strong>Pseudonymisation automatique</strong> : avant l’envoi, les <strong>noms</strong> (ex. <code>DUPONT</code>) et les <strong>numéros de téléphone</strong> sont remplacés par des identifiants neutres (<code>PERS_001</code>, <code>TEL_001</code>…).</li>
+      <li><strong>Transparence pour vous</strong> : dans les synthèses, les fiches et le chat, vous voyez toujours les <strong>vrais noms et numéros</strong>. Cette “désanonymisation” est faite localement, automatiquement.</li>
+      <li><strong>Journaux (logs)</strong> : les journaux techniques ne contiennent pas le texte intégral de vos pièces, mais seulement des informations techniques (taille, horodatage, erreur éventuelle).</li>
+    </ul>
+    <p class="panel-hint">En résumé : le modèle distant travaille sur des pseudonymes, vous travaillez sur les noms réels, et la table de correspondance reste sur votre machine.</p>
+  </section>
+
+  <!-- 10. Dépannage & bonnes pratiques -->
+  <section id="sec-10" class="help-section">
+    <h3 class="help-section-title">10. Dépannage &amp; bonnes pratiques 🔧</h3>
+
+    <h4 style="font-size:.8rem; margin-top:.3rem;">Problèmes fréquents</h4>
+    <ul style="margin:.25rem 0 .5rem 1.1rem; padding:0;">
+      <li><strong>“Je ne vois pas mon nouveau document dans l’affaire”</strong> : vérifier qu’il a bien été ajouté via <strong>📥 Ingestion</strong> (et pas seulement glissé dans le chat).</li>
+      <li><strong>“La synthèse ne parle pas d’un document important”</strong> : vérifier que ce document est bien ingéré dans l’affaire, et pas seulement chargé dans le chat au moment de la question.</li>
+      <li><strong>“Les réponses sont trop courtes / trop générales”</strong> : préciser votre demande (voir section 11), par exemple : <em>« fais une analyse détaillée en plusieurs points »</em> ou <em>« développe chaque point en un paragraphe »</em>.</li>
+      <li><strong>“L’assistant semble avoir oublié le document”</strong> : vérifier que le bandeau <em>Document actif</em> est toujours visible. Sinon, rechargez le document dans le chat.</li>
+      <li><strong>“Plus rien ne répond”</strong> : vérifier la connexion réseau (si modèle cloud), puis relancer l’application. Si le problème persiste, redémarrer le serveur Axion.</li>
+    </ul>
+
+    <h4 style="font-size:.8rem; margin-top:.3rem;">Bonnes pratiques</h4>
+    <ol style="margin:.25rem 0 .5rem 1.1rem; padding:0;">
+      <li>Commencer par des questions simples, puis affiner (approche itérative).</li>
+      <li>Préciser le <strong>format attendu</strong> : liste, points numérotés, paragraphe court, note formelle, etc.</li>
+      <li>Demander explicitement les <strong>sources</strong> quand c’est important (ex. “indique le document et la page pour chaque élément”).</li>
+      <li>Conserver les synthèses et fiches dans l’affaire pour retrouver rapidement ce qui a été produit.</li>
+      <li>En cas de doute sur une réponse, demander : <em>“reprends en citant textuellement les passages sur lesquels tu t’appuies”</em>.</li>
+    </ol>
+  </section>
+
+  <!-- 11. Questions guidées -->
+  <section id="sec-11" class="help-section">
+    <h3 class="help-section-title">11. Exemples de questions guidées (10) 💬</h3>
+
+    <p>
+      Une <strong>question guidée</strong> indique clairement ce que vous attendez :
+      type de réponse (liste, résumé, analyse…), longueur, ton, demande de sources, etc.
+      Plus la demande est précise, plus la réponse est exploitable.
+    </p>
+
+    <ol>
+      <li>
+        <strong>Résumé simple d’un document</strong><br>
+        <pre><code>Fais un résumé en 5 points des éléments essentiels de ce document, en utilisant un langage simple.</code></pre>
+      </li>
+
+      <li>
+        <strong>Synthèse “magistrat” d’un document</strong><br>
+        <pre><code>Rédige une note de synthèse de 10 à 15 lignes, ton formel, à destination d’un magistrat.
+Présente les faits, les éléments à charge et les éléments à décharge.</code></pre>
+      </li>
+
+      <li>
+        <strong>Analyse détaillée</strong><br>
+        <pre><code>Fais une analyse détaillée en 3 parties :
+1) Contexte factuel
+2) Éléments clés de la procédure
+3) Points de vigilance ou d’incertitude</code></pre>
+      </li>
+
+      <li>
+        <strong>Chronologie courte</strong><br>
+        <pre><code>Construis une chronologie en 10 événements maximum, avec pour chacun : date, résumé très court, et référence au document.</code></pre>
+      </li>
+
+      <li>
+        <strong>Fiche personne (via le chat)</strong><br>
+        <pre><code>À partir des documents de l’affaire, dresse une fiche sur "Stéphane DUPONT né 1978" :
+identité, adresses mentionnées, téléphones associés, rôles et principaux faits.</code></pre>
+      </li>
+
+      <li>
+        <strong>Fiche téléphone</strong><br>
+        <pre><code>À partir des documents de l’affaire, dresse une fiche sur le numéro "+33 6 23 45 67 89" :
+nature de la ligne (si indiqué), correspondants fréquents, périodes d’activité, faits associés.</code></pre>
+      </li>
+
+      <li>
+        <strong>Extraction thématique</strong><br>
+        <pre><code>Liste les IBAN présents dans les documents ingérés, avec pour chacun le document et le contexte (une phrase autour).</code></pre>
+      </li>
+
+      <li>
+        <strong>Note courte de risques</strong><br>
+        <pre><code>Rédige une note très courte (6–8 lignes, ton formel) résumant les principaux risques et incertitudes mis en évidence par le dossier.</code></pre>
+      </li>
+
+      <li>
+        <strong>Demande systématique de sources</strong><br>
+        <pre><code>Donne ta réponse, puis liste à la fin les documents et pages sur lesquels tu t’es appuyé.</code></pre>
+      </li>
+
+      <li>
+        <strong>Reprise d’une réponse jugée trop vague</strong><br>
+        <pre><code>Ta réponse précédente est trop générale.
+Reprends en citant textuellement les passages des documents qui justifient chaque point, avec la référence du document.</code></pre>
+      </li>
+    </ol>
+
+    <p class="panel-hint">
+      <strong>Astuce :</strong> pour améliorer encore les résultats, précisez toujours :
+      le niveau de détail souhaité (court / détaillé), le ton (formel / informel), le format (liste, paragraphe, note).
+    </p>
+  </section>
+
+  <footer style="margin-top:0.8rem; font-size:0.9rem; color:var(--muted)">
+    <p>Si une étape ou un usage vous semble peu clair, vous pouvez le signaler dans le chat : l’aide pourra être enrichie au fil du temps.</p>
+  </footer>
+</div>

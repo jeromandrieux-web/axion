@@ -1,0 +1,1023 @@
+<!-- index.html -->
+<!-- Page d'accueil de l'application Axion -->
+<!-- Fournit les éléments UI et les hooks pour le chat, l’ingestion, les synthèses-->
+<!-- et les extractions (utilise /api/* pour les actions et affiche/telecharge les résultats)-->
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ title | default("Assitant d'enquête intelligent") }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- JS existants (ordre important) -->
+  <script defer src="static/js/utils.js"></script>
+  <script defer src="static/js/theme.js"></script>
+  <script defer src="static/js/extract.js"></script>
+  <script defer src="static/js/chat.js"></script>
+  <script defer src="static/js/app.v2.js"></script>
+  <script defer src="static/js/chat-upload.js"></script>
+  <script defer src="static/js/ui.js"></script>
+  <script defer src="static/js/ingest.js?v=8"></script>
+
+  <!-- thème initial très tôt -->
+  <script>
+    (function () {
+      try {
+        const saved = localStorage.getItem('theme');
+        const mode = saved || 'dark';
+        document.documentElement.setAttribute('data-theme', mode);
+        document.documentElement.style.colorScheme = (mode === 'light') ? 'light' : 'dark';
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="static/css/main.css" />
+  <!-- Alpine -->
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
+</head>
+
+<body
+  x-data="{
+    ...chatApp(),
+    sidePanel: 'none',
+    showHelp: false,
+    useCase: true,
+    personQuery: '',
+    lastExtraction: null,
+    showProgress: false,
+    progress: 0,
+    phase: '',
+    task: '',
+    eta: '',
+    ocrPages: 0
+  }"
+  x-init="init()"
+>
+  <!-- rail -->
+  <aside class="app-rail">
+    <!-- Logo fixe dans le rail (plus de binding is-loading pour l’instant) -->
+    <div class="brand-logo-frame">
+       <div class="brand-logo-ring">
+         <img src="static/img/logo-assistant.png" class="brand-logo-img" alt="Axion">
+       </div>
+     </div>
+
+    <button type="button" class="rail-btn"
+      :class="{ 'is-active': sidePanel === 'none' }"
+      @click="sidePanel = 'none'">
+      💬 <span class="label">Chat</span>
+    </button>
+
+    <button type="button" class="rail-btn"
+      :class="{ 'is-active': sidePanel === 'params' }"
+      @click="sidePanel = (sidePanel === 'params' ? 'none' : 'params')">
+      ⚙️ <span class="label">Paramètres</span>
+    </button>
+
+    <button type="button" class="rail-btn"
+      :class="{ 'is-active': sidePanel === 'case' }"
+      @click="sidePanel = (sidePanel === 'case' ? 'none' : 'case')">
+      📁 <span class="label">Affaires</span>
+    </button>
+
+    <button type="button" class="rail-btn"
+      :class="{ 'is-active': sidePanel === 'ingest' }"
+      @click="sidePanel = (sidePanel === 'ingest' ? 'none' : 'ingest')">
+      📥 <span class="label">Ingestion</span>
+    </button>
+
+    <button type="button" class="rail-btn"
+      :class="{ 'is-active': sidePanel === 'tools' }"
+      @click="sidePanel = (sidePanel === 'tools' ? 'none' : 'tools')">
+      🛠 <span class="label">Boite à outils</span>
+    </button>
+
+    <div class="rail-bottom">
+      <button id="rail-toggle" type="button" class="rail-btn" title="Afficher / masquer le rail">
+        <span id="rail-icon">⏴</span>
+        <span class="label">Rail</span>
+      </button>
+
+      <button id="help-btn" type="button" class="rail-btn" @click="showHelp = true; $nextTick(() => window.loadHelp())">
+        ❓ <span class="label">Aide</span>
+      </button>
+
+      <button
+        id="theme-toggle"
+        type="button"
+        class="rail-btn"
+        title="Changer de thème"
+        onclick="window.axionTheme && window.axionTheme.toggle()"
+      >
+        <span id="theme-icon">🌙</span>
+        <span class="label">Thème</span>
+      </button>
+
+      <button
+        id="theme-system"
+        type="button"
+        class="rail-btn"
+        title="Suivre le thème de la machine"
+        onclick="window.axionTheme && window.axionTheme.useSystem()"
+      >
+        🖥️ <span class="label">Système</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="app-shell">
+    <!-- chat -->
+    <main class="chat-shell">
+      <header class="chat-header">
+        <h1>
+          <span id="title-text">{{ title | default("Analyste judiciaire IA") }}</span>
+        </h1>
+      </header>
+
+      <!-- panneau "pensées" -->
+      <div x-show="think.show" x-transition.opacity.duration.150ms class="think-panel">
+        <div class="card p-4 shadow-xl flex gap-3 items-start">
+          <div class="text-lg">💡</div>
+          <div class="flex-1">
+            <div class="font-semibold mb-1">Pensées (raisonnement)</div>
+            <pre class="think-content" x-text="think.text"></pre>
+          </div>
+          <button class="pill text-xs opacity-80" @click="think.sticky = !think.sticky" x-text="think.sticky ? 'Auto: off' : 'Auto: on'"></button>
+        </div>
+      </div>
+
+            <!-- messages -->
+      <div id="scrollArea" class="chat-messages" x-ref="scrollArea">
+        <template x-for="m in messages" :key="m.id">
+          <div class="chat-row" :class="m.role === 'user' ? 'is-user' : 'is-assistant'">
+            
+            <!-- Avatar supprimé (remplacé par la colonne avatar fixe) -->
+            <!-- bloc <div class="avatar"> … </div> retiré -->            
+
+            <!-- Bloc message + sources -->
+            <div class="chat-msg-block">
+              <!-- bulle -->
+              <div class="chat-bubble" x-html="m.html"></div>
+
+              <!-- bouton copier (assistant seulement) -->
+              <button
+                type="button"
+                class="chat-copy-btn"
+                x-show="m.role === 'assistant'"
+                @click="copyMsg(m)"
+                title="Copier le contenu"
+              >
+                ⧉
+              </button>
+
+              <!-- sources -->
+              <template x-if="m.sources && m.sources.length">
+                <div class="chat-sources">
+                  <template x-for="(s, idx) in m.sources" :key="idx">
+                    <template x-if="s.url">
+                      <a
+                        class="chat-source-pill"
+                        :href="s.url"
+                        target="_blank"
+                        rel="noreferrer"
+                        x-text="s.page ? (s.source + ' (p. ' + s.page + ')') : (s.source || ('Source ' + (idx+1)))"
+                      ></a>
+                    </template>
+                    <template x-if="!s.url && s.doc_hash">
+                      <a
+                        class="chat-source-pill"
+                        :href="'/api/doc/' + s.doc_hash"
+                        target="_blank"
+                        rel="noreferrer"
+                        x-text="s.page ? (s.source + ' (p. ' + s.page + ')') : (s.source || ('Source ' + (idx+1)))"
+                      ></a>
+                    </template>
+                    <template x-if="!s.url && !s.doc_hash">
+                      <span
+                        class="chat-source-pill chat-source-pill--muted"
+                        x-text="s.page ? (s.source + ' (p. ' + s.page + ')') : (s.source || ('Source ' + (idx+1)))"
+                      ></span>
+                    </template>
+                  </template>
+                </div>
+              </template>
+            </div> <!-- .chat-msg-block -->
+          </div> <!-- .chat-row -->
+        </template>
+      </div> <!-- #scrollArea / .chat-messages -->
+
+      <!-- Indicateur de contexte -->
+      <div class="mt-2 flex flex-wrap gap-2 text-[0.72rem] text-slate-300">
+
+        <!-- Contexte libre -->
+        <div
+          x-show="!(currentDocText && currentDocText.trim()) && !(useMemory && caseId)"
+          class="inline-flex items-center gap-2 rounded-full bg-slate-800/60 border border-slate-600 px-3 py-1"
+        >
+          <span class="inline-block w-3 h-3 rounded-full bg-slate-400 shadow-sm"></span>
+          <span>⚪️ Contexte libre</span>
+        </div>
+
+        <!-- Contexte dossier -->
+        <div
+          x-show="useMemory && caseId"
+          class="inline-flex items-center gap-2 rounded-full bg-blue-900/40 border border-blue-600/60 px-3 py-1"
+        >
+          <span class="inline-block w-3 h-3 rounded-full bg-blue-400 shadow-sm"></span>
+          <span>🔵 Dossier : <span x-text="caseId"></span></span>
+        </div>
+      </div>
+
+      <!-- Badge + panneau document actif -->
+      <div x-data="{ docOpen: false }" class="doc-context-wrapper">
+
+        <!-- badge compact (toujours visible si document chargé) -->
+        <div
+          x-show="currentDocText && currentDocText.trim()"
+          class="inline-flex items-center gap-2 rounded-full bg-emerald-900/40 border border-emerald-600/60 px-3 py-1 cursor-pointer"
+          @click="docOpen = !docOpen"
+          title="Cliquer pour afficher/masquer les détails du document"
+        >
+          <span class="inline-block w-3 h-3 rounded-full bg-emerald-400 shadow-sm"></span>
+          <span>🟢 Document : <span x-text="currentDocName || 'chargé'"></span></span>
+          <button type="button" class="ml-2 text-[0.7rem] opacity-80" @click.stop="docOpen = !docOpen">
+            <span x-text="docOpen ? '▴' : '▾'"></span>
+          </button>
+        </div>
+
+        <!-- panneau détaillé -->
+        <div x-show="currentDocText && currentDocText.trim() && docOpen"
+             x-transition
+             class="mt-2 mb-1 flex items-center justify-between rounded-md border border-slate-700/60 bg-slate-900/60 px-3 py-1.5 text-xs text-slate-300">
+          <div class="flex flex-col">
+            <span class="font-medium">
+              Document actif :
+              <span x-text="currentDocName || 'Document chargé'"></span>
+            </span>
+            <span class="text-[0.7rem] text-slate-400 mt-0.5">
+              Les prochaines réponses tiendront compte de ce document. Vous pouvez le retirer à tout moment.
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button"
+                    class="inline-flex items-center rounded px-2 py-1 text-[0.7rem] border border-slate-600 hover:bg-slate-800 transition"
+                    @click="currentDocText=''; currentDocName=''; docOpen=false;">
+              🧹 Retirer
+            </button>
+            <button type="button"
+                    class="inline-flex items-center rounded px-2 py-1 text-[0.7rem] border border-slate-600 hover:bg-slate-800 transition"
+                    @click="docOpen = false">
+              Fermer
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- input -->
+      <form class="chat-input-bar" @submit.prevent="send()">
+        <textarea x-model="message"
+                  @keydown.enter.prevent="send()"
+                  placeholder="Écris ton message…"
+                  rows="1"></textarea>
+        <button id="send-btn" type="submit" class="btn" :disabled="sending">
+          <span x-show="!sending">Envoyer</span>
+          <span x-show="sending">…</span>
+        </button>
+      </form>
+    </main>
+
+    <!-- panneau latéral -->
+    <section class="side-panel" :class="{ 'is-open': sidePanel !== 'none' }">
+      <!-- PARAMÈTRES -->
+      <div class="panel-body" x-show="sidePanel === 'params'">
+        <h2 class="panel-title">Paramètres</h2>
+
+        <label class="panel-toggle mt-4">
+          <input type="checkbox" x-model="useMemory" @change="useCase = useMemory">
+          <span>Travailler dans l'affaire sélectionnée</span>
+        </label>
+
+        <p class="panel-hint" x-show="useMemory && caseId">
+          Affaire active : <strong x-text="caseId"></strong>
+        </p>
+        <p class="panel-hint" x-show="!useMemory">
+          Contexte : <strong>sans affaire</strong>
+        </p>
+
+        <input type="hidden" id="case_id" :value="useMemory ? caseId : ''">
+        <input type="hidden" id="model_name" :value="model">
+      </div>
+
+      <!-- AFFAIRES -->
+      <div class="panel-body" x-show="sidePanel === 'case'">
+        <h2 class="panel-title">Affaire</h2>
+        <p class="panel-hint">Sélectionner une affaire existante ou en créer une.</p>
+
+        <label class="panel-label">Affaires existantes</label>
+        <select id="cases" class="panel-input" x-model="caseId" @change="loadDocs()">
+          <option value="">— choisir une affaire —</option>
+          <template x-for="c in (cases || [])" :key="c">
+            <option :value="c" x-text="c"></option>
+          </template>
+        </select>
+        <div class="panel-hint" x-show="!(cases && cases.length)">Aucune affaire chargée.</div>
+
+        <label class="panel-label mt-3">Nouvelle affaire</label>
+        <textarea id="newcase" class="panel-input" rows="2" placeholder="ID de l'affaire…"></textarea>
+        <button class="btn w-full mt-3" id="create-case-btn" @click="createCase()">Créer l'affaire</button>
+
+        <div class="panel-hint mt-4">
+          Affaire actuelle : <strong x-text="caseId || '—'"></strong>
+        </div>
+      </div>
+
+      <!-- INGESTION -->
+      <div class="panel-body" x-show="sidePanel === 'ingest'">
+        <h2 class="panel-title">Ingestion</h2>
+        <p class="panel-hint">
+          Fichiers pour :
+          <strong x-text="useCase ? (caseId || '—') : 'hors affaire'"></strong>
+        </p>
+
+        <input id="files" name="files" type="file" multiple class="panel-input-file" />
+        <button class="btn w-full mt-3" id="ingest-btn"
+          @click="
+            const saved = caseId;
+            if (!useCase) caseId = '';
+            ingest();
+            caseId = saved;
+          ">
+          Lancer l'ingestion
+        </button>
+
+        <div class="ingest-progress" id="ingest-progress"
+             x-show="sidePanel === 'ingest' && showProgress && progressKind === 'ingest'">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="spinner"></div>
+            <div class="text-sm" id="ingest-msg" x-text="phase || task || 'Traitement en cours…'"></div>
+          </div>
+          <div class="progressbar">
+            <div class="progressbar-fill" id="ingest-progressbar" :style="`width:${progress}%`"></div>
+          </div>
+          <div class="text-xs mt-1 opacity-70">
+            <span id="ingest-percent" x-text="progress.toFixed(1) + '%'"></span>
+            <span x-show="eta"> • ETA ~ <span x-text="eta"></span></span>
+            <span x-show="ocrPages>0"> • OCR: <span x-text="ocrPages"></span> p.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- OUTILS & SYNTHÈSE -->
+      <div class="panel-body" x-show="sidePanel === 'tools'">
+        <h2 class="panel-title">Outils & Synthèse</h2>
+
+        <div class="flex flex-col gap-3">
+          <p class="panel-hint">Synthèse détaillée du dossier</p>
+          <button class="btn w-full" id="summary-btn" @click="makeLeaf()" :disabled="busy">
+            Synthèse thématique
+          </button>
+
+          <p class="panel-hint">Résumés chronologique des actes</p>
+          <button class="btn w-full" type="button" @click="makeChrono('long')" :disabled="busy">
+            Synthèse chronologique
+          </button>
+
+          <p class="panel-hint">Rapport de synthèse d'enquête (police)</p>
+          <button class="btn w-full" type="button" @click="makeChrono('short')" :disabled="busy">
+            Rapport de synthèse
+          </button>
+        </div>
+
+        <div id="tools-progress"
+             x-show="sidePanel === 'tools' && showProgress && (progressKind === 'leaf' || progressKind === 'chrono-long' || progressKind === 'chrono-short')"
+             style="margin-top:1rem;">
+           <div class="panel-hint mb-1">
+             <template x-if="progressKind === 'leaf'">
+               <span>Synthèse thématique en cours…</span>
+             </template>
+             <template x-if="progressKind === 'chrono-long'">
+               <span>Synthèse chrono détaillée en cours…</span>
+             </template>
+             <template x-if="progressKind === 'chrono-short'">
+               <span>Rapport de synthèse en cours…</span>
+             </template>
+           </div>
+           <div class="progressbar">
+             <div class="progressbar-fill" :style="`width:${progress}%`"></div>
+           </div>
+           <div class="panel-hint" style="margin-top:.25rem;" x-text="phase || task || 'Préparation…'"></div>
+         </div>
+
+        <div class="mt-4">
+          <a id="leaf-download" href="#" class="panel-hint" style="display:none; margin-top:.75rem;" download>📥 Télécharger la synthèse thématique</a>
+          <a id="chrono-long-download" href="#" class="panel-hint" style="display:none; margin-top:.4rem;" download>📥 Télécharger la synthèse chrono détaillée</a>
+          <a id="chrono-short-download" href="#" class="panel-hint" style="display:none; margin-top:.4rem;" download>📥 Télécharger le rapport de synthèse</a>
+        </div>
+
+        <p class="panel-hint mt-2">
+           Fichiers générés dans
+           <code>/storage/cases/&lt;affaire&gt;/summaries/</code>.
+         </p>
+
+        <div class="mt-6">
+          <label class="panel-label">Extraction détaillée d'une personne</label>
+          <input type="text" class="panel-input mt-1" placeholder="Ex. Jean MARTIN né 1978" x-model="personQuery">
+          <button class="btn w-full mt-3"
+                  @click="
+                    if (!personQuery) { alert('Indique un nom de personne'); return; }
+                    const saved = caseId;
+                    if (!useCase) caseId = '';
+                    sending = true;
+                    (function(){ const a = document.getElementById('person-download'); if (a) { a.style.display = 'none'; a.href = '#'; } })();
+                    sendStructuredPersonExtraction(personQuery).finally(() => { sending = false; caseId = saved; });
+                  ">
+            Lancer l'extraction détaillée
+          </button>
+
+          <a id="person-download"
+             href="#"
+             class="panel-hint"
+             style="display:none; margin-top:.4rem;"
+             download>
+            📥 Télécharger la fiche personne
+          </a>
+        </div>
+
+        <div class="mt-6">
+          <label class="panel-label">Fiche détaillée d’un numéro de téléphone</label>
+          <input type="text"
+                 class="panel-input mt-1"
+                 placeholder="Ex. 06 14 52 98 77 ou +33614529877"
+                 x-model="phoneQuery">
+
+          <button class="btn w-full mt-3"
+                  @click="
+                    if (!phoneQuery) { alert('Indique un numéro de téléphone'); return; }
+                    const saved = caseId;
+                    if (!useCase) caseId = '';
+                    sending = true;
+                    (function(){ const a = document.getElementById('phone-download'); if (a) { a.style.display = 'none'; a.href = '#'; } })();
+                    sendStructuredPhoneExtraction(phoneQuery).finally(() => { sending = false; caseId = saved; });
+                  ">
+            Générer la fiche téléphone
+          </button>
+
+          <a id="phone-download"
+             href="#"
+             class="panel-hint"
+             style="display:none; margin-top:.4rem;"
+             download>
+            📥 Télécharger la fiche téléphone
+          </a>
+        </div>
+
+        <div class="mt-6">
+          <label class="panel-label">Extractions thématiques</label>
+
+          <label class="panel-toggle mt-2">
+            <input type="checkbox" id="extractStrict" checked>
+            <span>Lier au nom de la personne</span>
+          </label>
+
+          <label class="panel-label mt-2" for="selectTheme">Thème</label>
+          <select id="selectTheme" class="panel-input">
+            <option value="phones">Téléphones</option>
+            <option value="iban">IBAN / comptes</option>
+            <option value="emails">Emails</option>
+            <option value="plates">Plaques</option>
+            <option value="ips">Adresses IP</option>
+            <option value="telegram">Telegram</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="snapchat">Snapchat</option>
+          </select>
+
+          <button type="button" class="btn w-full mt-3" id="btnExtractPhones">
+            Extraire le thème
+          </button>
+
+          <button type="button" class="btn w-full mt-2 btn-outline" id="btnExtractScan">
+            Scan avancé
+          </button>
+
+          <div id="extractStatus" class="panel-hint mt-2"></div>
+          <pre id="extractOutput" class="panel-code" style="min-height:80px; max-height:170px; overflow:auto; margin-top:.35rem;"></pre>
+        </div>
+
+        <!-- Remplacé : bouton extraction + sortie alignés sur extractPhones() -->
+        <button
+          type="button"
+          class="tools-action"
+          @click="extractPhones()"
+          :disabled="extracting"
+        >
+          <span x-show="!extracting">📞 Extraire les téléphones</span>
+          <span x-show="extracting" class="typing dots">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          </span>
+        </button>
+
+        <div id="extractOutputPhones" class="panel-code" style="min-height:80px; max-height:170px; overflow:auto; margin-top:.35rem;"></div>
+      </div>
+    </section>
+  </div> <!-- fin app-shell -->
+
+  <!-- Aide / Tutoriel de démarrage -->
+  <div x-show="showHelp" x-transition.opacity.duration.150ms class="modal-backdrop" @close-help.window="showHelp = false">
+    <div class="modal" @click.outside="showHelp=false">
+      <!-- Bouton Fermer toujours disponible (même si fragment help.html ne l'inclut pas) -->
+      <button
+        class="help-close-btn"
+        aria-label="Fermer l'aide"
+        onclick="window.closeHelp && window.closeHelp()"
+        style="position:absolute; right:.6rem; top:.6rem; background:transparent; border:0; font-size:1.1rem; cursor:pointer; z-index:10;">
+        ✕
+      </button>
+       <div id="help-content" class="help-loading">Chargement de l'aide…</div>
+     </div>
+   </div>
+
+  <!-- Script d'extraction détaillée (réutilise /api/chat) -->
+  <script>
+    window.sendStructuredPersonExtraction = async function(name) {
+      const body = document.querySelector('body');
+      const root = body && body._x_dataStack ? body._x_dataStack[0] : null;
+      if (!root) return;
+
+      const model = root.model || 'deepseek-v3.1:671b-cloud';
+      const caseId = root.useMemory ? (root.caseId || '') : '';
+      const mode = root.useMemory ? "memory" : "normal";
+
+      // message user
+      root.messages.push({
+        id: 'user-' + Date.now(),
+        role: 'user',
+        html: '🔎 Extraction détaillée de la personne : <strong>' + name + '</strong>'
+      });
+
+      // message assistant temporaire avec avatar LLM + dots
+      const safeName = root.escape ? root.escape(name) : name;
+      let tempId;
+
+      // si on dispose du helper du chat, on l'utilise pour avoir le même avatar/spinner
+      if (root.pushAssistantPlaceholder && root.updateAssistant && root.renderAnswer) {
+        tempId = root.pushAssistantPlaceholder();
+        const loadingHtml =
+          '<span class="typing dots">' +
+            '<span class="dot"></span><span class="dot"></span><span class="dot"></span>' +
+          '</span>' +
+          ' <span>Je parcours le dossier pour <strong>' + safeName + '</strong>…</span>';
+
+        root.updateAssistant(tempId, root.renderAnswer(loadingHtml));
+      } else {
+        // fallback ancien comportement sans avatar
+        tempId = 'assistant-loading-' + Date.now();
+        root.messages.push({
+          id: tempId,
+          role: 'assistant',
+          html: '<div class="flex items-center gap-2"><div class="spinner"></div><span>Je parcours le dossier pour <strong>' + safeName + '</strong>…</span></div>'
+        });
+      }
+
+      // 👉 prompt spécialisé (utilisé uniquement si on n’a pas d’affaire)
+      const systemPrompt = `
+Tu es un analyste judiciaire français. On te donne le nom d'une personne et tu as accès à un dossier (affaire) ingéré.
+Tu dois RASSEMBLER et STRUCTURER toutes les informations trouvées sur cette personne dans ce dossier.
+
+FORME À RESPECTER (d'abord texte lisible, ensuite JSON) :
+
+1. Identité
+   - Nom
+   - Prénom(s)
+   - Alias éventuels
+2. État civil
+   - Date de naissance (si connue)
+   - Lieu de naissance (si connu)
+   - Nationalité(s) (si connue(s))
+3. Adresse(s)
+   - Adresse actuelle ou la plus récente
+   - Autres adresses trouvées
+4. Situation familiale
+   - Conjoint(e) / compagnon(agne)
+   - Enfants
+   - Autres proches clairement identifiés
+5. Coordonnées de contact
+   - Téléphones (📱) avec indication s’ils sont réellement rattachés à la personne
+   - Emails (✉️)
+6. Éléments administratifs / matériels
+   - IBAN / comptes (🏦)
+   - Véhicules / plaques (🚗)
+7. Liens / associations
+   - Personnes associées
+   - Sociétés associées
+8. Sources
+   - Toujours lister les documents/pages/chunks d’où tu tires les infos
+
+Après cette partie lisible, tu donnes un objet JSON unique avec exactement cette structure :
+
+{
+  "identite": {
+    "nom": "",
+    "prenoms": [],
+    "alias": [],
+    "date_naissance": "",
+    "lieu_naissance": "",
+    "nationalites": []
+  },
+  "adresses": [
+    { "adresse": "", "periode": "", "sources": [] }
+  ],
+  "situation_familiale": {
+    "conjoint": "",
+    "enfants": [],
+    "autres_proches": []
+  },
+  "coordonnees": {
+    "telephones": [
+      { "numero": "", "type": "perso|pro|inconnu", "sources": [] }
+    ],
+    "emails": [
+      { "email": "", "sources": [] }
+    ]
+  },
+  "elements_materiels": {
+    "iban": [
+      { "iban": "", "banque": "", "sources": [] }
+    ],
+    "vehicules": [
+      { "immatriculation": "", "marque": "", "modele": "", "sources": [] }
+    ]
+  },
+  "liens": {
+    "personnes_associees": [
+      { "nom": "", "lien": "", "sources": [] }
+    ],
+    "societes_associees": [
+      { "denomination": "", "role": "", "sources": [] }
+    ]
+  },
+  "sources": []
+}
+
+RÈGLES IMPORTANTES
+- Si une info est absente dans le dossier, mets juste "" ou [] mais conserve la clé.
+- N'invente pas : tu ne fais qu'agréger ce qu'il y a dans le dossier.
+- Toujours mettre des "sources": ["nom_doc", "p.12"] quand c'est possible.
+`.trim();
+
+      const userPrompt = `Personne à extraire : "${name}"`;
+
+      let answerText = '';
+      let payload = null;
+
+      try {
+        if (caseId) {
+          // 🔗 Mode "dans une affaire" → on appelle le backend dédié
+          const fd = new FormData();
+          fd.append("case_id", caseId);
+          fd.append("person", name);
+          fd.append("model", model || "deepseek-v3.1:671b-cloud");
+
+          const resp = await fetch("/api/extract/person/profile", {
+            method: "POST",
+            body: fd,
+          });
+
+          if (!resp.ok) {
+            const txt = await resp.text().catch(() => "");
+            throw new Error("HTTP " + resp.status + " " + txt);
+          }
+
+          const data = await resp.json().catch(() => null);
+          if (!data) {
+            throw new Error("Réponse JSON invalide depuis /api/extract/person/profile");
+          }
+
+          answerText = data.answer || "";
+          payload = data;
+        } else {
+          // 🧩 Fallback hors affaire → via /api/chat
+          const resp = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: userPrompt,
+              model: model || "deepseek-v3.1:671b-cloud",
+              stream: "plain",
+              system: systemPrompt,
+              case_id: null,
+              mode: mode
+            })
+          });
+
+          const raw = await resp.text();
+
+          let parsedJson = null;
+          try {
+            const parsed = JSON.parse(raw);
+            answerText = parsed.answer || raw;
+            parsedJson = parsed.answer ? parsed : null;
+          } catch (e) {
+            answerText = raw;
+            parsedJson = null;
+          }
+
+          if (answerText.includes('}{"answer"')) {
+            answerText = answerText.split('}{"answer"')[0] + '}';
+          }
+
+          payload = parsedJson || { answer: answerText };
+        }
+      } catch (err) {
+        answerText = '❌ Erreur pendant l’extraction : ' + (err && err.message ? err.message : String(err));
+        payload = { answer: answerText };
+      }
+
+      // on garde pour l'export / téléchargement
+      root.lastExtraction = payload;
+
+      // on met à jour le lien de téléchargement si le backend a renvoyé un fichier
+      try {
+        const a = document.getElementById("person-download");
+        if (a) {
+          const dl = payload && (payload.download_url || (payload.data && payload.data.download_url));
+          if (dl) {
+            a.href = dl;
+            a.style.display = "inline-block";
+          } else {
+            a.href = "#";
+            a.style.display = "none";
+          }
+        }
+      } catch (e) {}
+
+      // on remplace le message "loading" par la réponse finale
+      const rawText = answerText || "";
+
+      const rendered =
+        (root.renderAnswer && typeof root.renderAnswer === "function")
+          ? root.renderAnswer(rawText)
+          : (
+              '<pre style="white-space: pre-wrap; word-break: break-word;">' +
+              rawText +
+              "</pre>"
+            );
+
+      if (root.updateAssistant && tempId) {
+        // 🧽 arrêt du spinner sur l'avatar
+        const mm = root.messages.find(m => m.id === tempId);
+        if (mm && mm.avatarHtml) {
+          mm.avatarHtml = mm.avatarHtml
+            .replace(/\btyping\b/g, "")
+            .replace(/\bthinking\b/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+
+        root.updateAssistant(tempId, rendered);
+      } else {
+        const idx = root.messages.findIndex((m) => m.id === tempId);
+        if (idx !== -1) {
+          root.messages[idx] = {
+            id: "assistant-" + Date.now(),
+            role: "assistant",
+            html: rendered,
+          };
+        } else {
+          root.messages.push({
+            id: "assistant-" + Date.now(),
+            role: "assistant",
+            html: rendered,
+          });
+        }
+      }
+
+      // scroll en bas
+      try {
+        const scrollArea = document.querySelector('.chat-messages');
+        if (scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+      } catch (e) {}
+    };
+  </script>
+
+  <script>
+    window.sendStructuredPhoneExtraction = async function(numberRaw) {
+      const body = document.querySelector('body');
+      const root = body && body._x_dataStack ? body._x_dataStack[0] : null;
+      if (!root) return;
+
+      const phone = (numberRaw || '').trim();
+      if (!phone) return;
+
+      const model = root.model || 'deepseek-v3.1:671b-cloud';
+      const caseId = root.useMemory ? (root.caseId || '') : '';
+      const mode = root.useMemory ? "memory" : "normal";
+
+      if (!caseId) {
+        // pas d'affaire → petit message dans le chat
+        root.messages.push({
+          id: 'assistant-' + Date.now(),
+          role: 'assistant',
+          html: "<span class='text-red-400'>La fiche téléphone nécessite une affaire active. Active la mémoire et choisis un dossier.</span>"
+        });
+        return;
+      }
+
+      // 1) message user
+      root.messages.push({
+        id: 'user-' + Date.now(),
+        role: 'user',
+        html: '🔎 Fiche détaillée du numéro : <strong>' + phone + '</strong>'
+      });
+
+      // 2) message assistant temporaire avec avatar LLM + dots
+      const safePhone = root.escape ? root.escape(phone) : phone;
+      let tempId;
+
+      if (root.pushAssistantPlaceholder && root.updateAssistant && root.renderAnswer) {
+        tempId = root.pushAssistantPlaceholder();
+        const loadingHtml =
+          '<span class="typing dots">' +
+            '<span class="dot"></span><span class="dot"></span><span class="dot"></span>' +
+          '</span>' +
+          ' <span>Je parcours le dossier pour le numéro <strong>' + safePhone + '</strong>…</span>';
+
+        root.updateAssistant(tempId, root.renderAnswer(loadingHtml));
+      } else {
+        // fallback sans avatar
+        tempId = 'assistant-loading-phone-' + Date.now();
+        root.messages.push({
+          id: tempId,
+          role: 'assistant',
+          html: '<div class="flex items-center gap-2"><div class="spinner"></div><span>Je parcours le dossier pour le numéro <strong>' + safePhone + '</strong>…</span></div>'
+        });
+      }
+
+      let answerText = '';
+      let payload = null;
+
+      try {
+        // Appel direct à la route fiche téléphone
+        const fd = new FormData();
+        fd.append("case_id", caseId);
+        fd.append("number", phone);
+        fd.append("model", model || "deepseek-v3.1:671b-cloud");
+
+        const resp = await fetch("/api/phones/report", {
+          method: "POST",
+          body: fd,
+        });
+
+        if (!resp.ok) {
+          const txt = await resp.text().catch(() => "");
+          throw new Error("HTTP " + resp.status + " " + txt);
+        }
+
+        payload = await resp.json().catch(() => null);
+        if (!payload) {
+          throw new Error("Réponse JSON invalide depuis /api/phones/report");
+        }
+
+        answerText =
+          payload.answer ||
+          (
+            "Fiche téléphone générée pour " +
+            (payload.normalized_number || phone) +
+            " (" +
+            (payload.hits_count ?? "?") +
+            " occurrence(s) dans le dossier)."
+          );
+      } catch (err) {
+        answerText =
+          "❌ Erreur pendant la génération de la fiche téléphone : " +
+          (err && err.message ? err.message : String(err));
+        payload = { answer: answerText };
+      }
+
+      // 3) mise à jour du lien de téléchargement
+      try {
+        const a = document.getElementById("phone-download");
+        if (a) {
+          const dl = (payload && (payload.download_url || payload.path)) || null;
+          if (dl) {
+            a.href = dl;
+            a.style.display = "inline-block";
+          } else {
+            a.href = "#";
+            a.style.display = "none";
+          }
+        }
+      } catch (e) {}
+
+      // 4) RENDU COMME LE CHAT NORMAL (Markdown -> HTML) + arrêt du spinner
+
+      const rawText = answerText || "";
+      const rendered =
+        (root.renderAnswer && typeof root.renderAnswer === "function")
+          ? root.renderAnswer(rawText)   // 👉 Markdown converti (###, listes, etc.)
+          : (
+              '<pre style="white-space: pre-wrap; word-break: break-word;">' +
+              rawText +
+              "</pre>"
+            );
+
+      if (root.updateAssistant && tempId) {
+        // 🧽 arrêt du spinner sur l'avatar
+        const mm = root.messages.find(m => m.id === tempId);
+        if (mm && mm.avatarHtml) {
+          mm.avatarHtml = mm.avatarHtml
+            .replace(/\btyping\b/g, "")
+            .replace(/\bthinking\b/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+
+        // et on remplace le contenu par la réponse finale formatée
+        root.updateAssistant(tempId, rendered);
+      } else {
+        // fallback sans helper
+        const idx = root.messages.findIndex((m) => m.id === tempId);
+        if (idx !== -1) {
+          root.messages[idx] = {
+            id: "assistant-" + Date.now(),
+            role: "assistant",
+            html: rendered,
+          };
+        } else {
+          root.messages.push({
+            id: "assistant-" + Date.now(),
+            role: "assistant",
+            html: rendered,
+          });
+        }
+      }
+
+      // 5) scroll en bas
+      try {
+        const scrollArea = document.querySelector(".chat-messages");
+        if (scrollArea) scrollArea.scrollTop = scrollArea.scrollHeight;
+      } catch (e) {}
+    };
+  </script>
+
+  <script src="{{ url_for('static', path='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', path='js/rail.js') }}"></script>
+
+  <script>
+  window.helpLoaded = false;
+  window.loadHelp = async function () {
+    if (window.helpLoaded) return;
+    const el = document.getElementById("help-content");
+    if (!el) return console.warn("help: #help-content not found");
+    el.innerText = "Chargement de l'aide…";
+    try {
+      const res = await fetch("static/help.html", { cache: "force-cache" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      el.innerHTML = await res.text();
+      window.helpLoaded = true;
+      // sommaire -> scroll smooth
+      el.querySelectorAll(".help-toc a").forEach(a => {
+        a.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          const id = a.getAttribute("href").slice(1);
+          const target = el.querySelector('#' + id);
+          if (target) target.scrollIntoView({behavior: 'smooth', block: 'start'});
+        });
+      });
+    } catch (e) {
+      console.error("help load failed:", e);
+      el.innerText = "Impossible de charger l'aide.";
+    }
+  };
+
+  // Si tu utilises Alpine pour ouvrir l'aide via un bouton, appelle loadHelp au click :
+  // <button @click="showHelp = true; $nextTick(() => window.loadHelp())">Aide</button>
+</script>
+
+<script>
+  // Stub de sécurité : évite ReferenceError si des handlers inline appellent phoneQuery
+  if (typeof window.phoneQuery === "undefined") {
+    window.phoneQuery = function(arg) {
+      console.warn("phoneQuery appelé mais non défini:", arg);
+      // TODO: router vers la vraie fonction si existante, ex :
+      // if (window.extractPhone) return window.extractPhone(arg);
+    };
+  }
+</script>
+
+<!-- script global minimal (placer près du loadHelp existant, avant </body>) -->
+<script>
+  // dispatch d'un événement pour fermer la modale (utilisé par le bouton du fragment)
+  if (typeof window.closeHelp === "undefined") {
+    window.closeHelp = function () {
+      window.dispatchEvent(new Event('close-help'));
+    };
+  }
+</script>
+
+</body>
+</html>
